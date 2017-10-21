@@ -26,7 +26,7 @@ from bs4 import BeautifulSoup
 
 ## TODO finish
 def find_urls(s):
-    return re.findall('http[s]?://[\w]+[.]+[\w]+\S+', s)
+    return re.findall(r'(http[s]?://[\S]+\.+\S\S+)', s) #using regex to parse URLs from a string
 
 
 
@@ -36,18 +36,21 @@ def find_urls(s):
 ## Grab the headlines from the Most Read section of http://www.michigandaily.com/section/opinion
 
 def grab_headlines():
+    #f=open("opinion.html","r")
+    #file_text=f.read()
+    #soup=BeautifulSoup(file_text,"html.parser")
+
     url= "http://www.michigandaily.com/section/opinion"
     html=requests.get(url)
-    soup=BeautifulSoup(html.content,"html.parser")
-    most_read= soup ('ol')[0]
+    soup=BeautifulSoup(html.content,"html.parser") #using contents of file to create BeautifulSoup object
+    most_read= soup ('ol')[0] #first ordered list (most read)
 
     headlines=[]
 
     for x in most_read.contents:
         if x.string != '\n':
             headlines.append(x.string)
-    return headlines
-
+    return headlines #returns list of headlines
 
 
 ## PART 3 (a) Define a function called get_umsi_data.  It should create a dictionary
@@ -64,14 +67,32 @@ def grab_headlines():
 
 
 def get_umsi_data():
-    pass
+    umsi_titles={}
+
+    for page in range(13): #looping through 13 pages of UMSI directory
+        if page == 0:
+            url="https://www.si.umich.edu/directory?field_person_firstname_value=&field_person_lastname_value=&rid=All"
+        else:
+            url="https://www.si.umich.edu/directory?field_person_firstname_value=&field_person_lastname_value=&rid=All&page="+'&page='+str(page)
+            #updates URL with correct page number
+        html = requests.get(url, headers={'User-Agent': 'SI_CLASS'})
+        soup = BeautifulSoup(html.text, 'html.parser')
+        names = soup.find_all('div', {'class': 'field-item even', 'property': 'dc:title'}) #parsing for all names in directory
+        titles = soup.find_all('div', {'class': 'field field-name-field-person-titles field-type-text field-label-hidden'}) #parsing for all titles in directory
+        for number in range(len(names)):
+            umsi_titles[names[number].text] = titles[number].text #corresponds name with title
+    return umsi_titles
+
 
 ## PART 3 (b) Define a function called num_students.
 ## INPUT: The dictionary from get_umsi_data().
 ## OUTPUT: Return number of PhD students in the data.  (Don't forget, I may change the input data)
 def num_students(data):
-    pass
-
+    total_phd= 0
+    for student in data:
+        if data[student] == 'PhD student':
+            total_phd += 1 #counting the number of PhD students in data
+    return total_phd
 
 
 ########### TESTS; DO NOT CHANGE ANY CODE BELOW THIS LINE! ###########
